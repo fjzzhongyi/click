@@ -1,0 +1,1936 @@
+Content-type: text/html; charset=UTF-8
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of CLICK</TITLE>
+</HEAD><BODY>
+<H1>CLICK</H1>
+Section: File Formats (5)<BR>Updated: 16/Mar/2004<BR><A HREF="#index">Index</A>
+<A HREF="/cgi-bin/man/man2html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+click - Click configuration language
+<A NAME="lbAC">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+The Click language describes Click router configurations.
+<P>
+
+Two basic statements can implement any router.
+<I>Declaration</I>
+
+statements create elements, and
+<I>connection</I>
+
+statements define packet flow among them.
+Think of a Click router configuration as a directed graph of elements.
+Then declarations list the graph's vertices and connections list its edges.
+<P>
+
+A declaration looks like this:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+<I>name</I> :: <I>class</I>(<I>config</I>);
+
+
+
+<P>
+
+
+
+</DL>
+
+
+This introduces an element called
+<I>name</I>
+
+with element class
+<I>class</I>
+
+and configuration arguments
+<I>config</I>.
+
+<P>
+
+A connection looks like this:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+<I>name1</I> [<I>port1</I>] -&gt; [<I>port2</I>] <I>name2</I>;
+
+
+
+<P>
+
+
+
+</DL>
+
+
+This connects
+<I>name1</I>'s output port <I>port1</I>
+
+and
+<I>name2</I>'s input port <I>port2</I>.
+
+The two
+<I>name</I>s
+
+must refer to previously declared elements, and the two
+<I>port</I>s
+
+must be nonnegative integers.
+<P>
+
+Each element must be declared exactly once before being used in
+any connection.  It is an error to declare an element name more than
+once in the same scope.  It is not an error to repeat a connection,
+however.
+<P>
+
+Lexically, Click identifiers, such as element names and class names,
+are sequences of letters, numbers, underscores, at-signs, and slashes
+that do not begin or end with a slash.  Configuration strings are
+sequences of characters delimited by parentheses, possibly including
+balanced parentheses and quoted strings.  The semicolons that
+terminate statements are generally optional (in some cases described
+later they are required to avoid ambiguity).  Lexical issues are
+described in more depth below.
+<P>
+
+Any configuration can be completely defined with these statements.
+The rest of the Click language offers extensive shorthand and
+abstraction features that simplify router programming.
+<A NAME="lbAD">&nbsp;</A>
+<H2>SHORTHAND</H2>
+
+<A NAME="lbAE">&nbsp;</A>
+<H3>Declaration shorthand</H3>
+
+Empty configuration strings can be omitted.
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+<I>name</I> :: <I>class</I>;
+
+
+
+<P>
+
+
+
+</DL>
+
+
+Multiple elements can be declared using a comma-separated list of names.
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+<I>name1</I>, <I>name2</I>, ..., <I>nameN</I> ::
+
+<I>class</I>(<I>config</I>);
+
+
+
+<P>
+
+
+
+</DL>
+
+
+You may also declare an element without specifying its name. The
+system will choose an element name for you. Such elements are called
+<I>anonymous</I>.
+
+For example:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+<I>class</I>(<I>config</I>);
+
+
+
+<P>
+
+
+
+</DL>
+
+
+is equivalent to
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+<I>generatedname</I> :: <I>class</I>(<I>config</I>);
+
+
+
+<P>
+
+
+
+</DL>
+
+
+The
+<I>generatedname</I>
+
+has the form
+`<I>class</I>@<I>number</I>';
+
+Click chooses the
+<I>number</I>
+
+so that the name is unique. These numbers are predictable: when the
+system parses a Click file twice, that file's anonymous elements will get
+the same generated names each time. Users may also declare elements with names
+like
+`<I>class</I>@<I>number</I>',
+
+though we suggest that users avoid the `@'
+character in their element names.
+<A NAME="lbAF">&nbsp;</A>
+<H3>Connection shorthand</H3>
+
+You can string together several connections into a single statement if the
+output element of one is the same as the input element of the other:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+<I>a</I> [1] -&gt; [2] <I>x</I>
+
+[3] -&gt; [4] <I>b</I>;
+
+
+
+<P>
+
+
+
+</DL>
+
+
+means
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+<I>a</I> [1] -&gt; [2] <I>x</I>;
+
+<BR>
+
+<I>x</I> [3] -&gt; [4] <I>b</I>;
+
+
+
+<P>
+
+
+
+</DL>
+
+
+A missing port number implies port [0]. These two lines mean the same thing:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+<I>n1</I> [0] -&gt; [0] <I>n2</I>;
+
+<BR>
+
+<I>n1</I> -&gt; <I>n2</I>;
+
+
+
+<P>
+
+
+
+</DL>
+
+
+<P>
+
+Elements may also be declared inside connections, either with names or
+anonymously.  For instance,
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+... -&gt; [<I>p1</I>] <I>name</I> ::
+
+<I>class</I>(<I>config</I>) [<I>p2</I>] -&gt; ...;
+
+
+
+<P>
+
+
+
+</DL>
+
+
+means
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+<I>name</I> :: <I>class</I>(<I>config</I>);
+
+<BR>
+
+... -&gt; [<I>p1</I>] <I>name</I> [<I>p2</I>] -&gt; ...;
+
+
+
+<P>
+
+
+
+</DL>
+
+
+Similarly,
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+... -&gt; [<I>p1</I>] <I>class</I>(<I>config</I>)
+
+[<I>p2</I>] -&gt; ...;
+
+
+
+<P>
+
+
+
+</DL>
+
+
+means
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+<I>generatedname</I> :: <I>class</I>(<I>config</I>);
+
+<BR>
+
+... -&gt; [<I>p1</I>] <I>generatedname</I> [<I>p2</I>] -&gt; ...;
+
+
+
+<P>
+
+
+
+</DL>
+
+
+<A NAME="lbAG">&nbsp;</A>
+<H3>Many-to-one connections</H3>
+
+A many-to-one connection connects many elements to the same port.
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+<I>n1</I>, <I>n2</I>, <I>n3</I> -&gt; <I>x</I>;
+
+
+
+<P>
+
+
+
+</DL>
+
+
+means
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+<I>n1</I> -&gt; <I>x</I>;
+
+<BR>
+
+<I>n2</I> -&gt; <I>x</I>;
+
+<BR>
+
+<I>n3</I> -&gt; <I>x</I>;
+
+
+
+<P>
+
+
+
+</DL>
+
+
+Port numbers are supported:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+<I>n1</I> [<I>p1</I>], <I>n2</I> [<I>p2</I>] -&gt; [<I>p3</I>] <I>x</I>;
+
+
+
+<P>
+
+
+
+</DL>
+
+
+means
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+<I>n1</I> [<I>p1</I>] -&gt; [<I>p3</I>] <I>x</I>;
+
+<BR>
+
+<I>n2</I> [<I>p2</I>] -&gt; [<I>p3</I>] <I>x</I>;
+
+
+
+<P>
+
+
+
+</DL>
+
+
+One-to-many connections are also allowed; put the comma-separated
+list on the right.
+<P>
+
+You may declare elements within a many-to-one connection, but unlike with declaration shorthand,
+each declaration applies to only one name. For example
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+<I>n1</I>, <I>n2</I> :: <I>class</I> -&gt; <I>n3</I>;
+
+
+
+<P>
+
+
+
+</DL>
+
+
+means
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+<I>n2</I> :: <I>class</I>;
+
+<BR>
+
+<I>n1</I> -&gt; <I>n3</I>;
+
+<BR>
+
+<I>n2</I> -&gt; <I>n3</I>;
+
+
+
+<P>
+
+
+
+</DL>
+
+
+Note that
+<I>n1</I>
+
+was not declared.
+<A NAME="lbAH">&nbsp;</A>
+<H3>Many-to-many connections</H3>
+
+A many-to-many connection connects many outputs to many
+inputs. For example, consider a simple Classifier. This code:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+<I>c</I> :: Classifier(00/01, 00/02, 00/03);
+
+<BR>
+
+<I>next</I> :: <I>class</I>;
+
+
+<P>
+
+
+
+<BR>
+
+<I>c</I> [0] -&gt; Paint(0) -&gt; <I>next</I>;
+
+<BR>
+
+<I>c</I> [1] -&gt; <A HREF="/cgi-bin/man/man2html?1+Paint">Paint</A>(1) -&gt; <I>next</I>;
+
+<BR>
+
+<I>c</I> [2] -&gt; <A HREF="/cgi-bin/man/man2html?2+Paint">Paint</A>(2) -&gt; <I>next</I>;
+
+
+
+<P>
+
+
+
+</DL>
+
+
+can more concisely be written like this, using the `=&gt;' many-to-many connector:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+<I>c</I> [0], <I>c</I> [1], <I>c</I> [2] =&gt; Paint(0), <A HREF="/cgi-bin/man/man2html?1+Paint">Paint</A>(1), <A HREF="/cgi-bin/man/man2html?2+Paint">Paint</A>(2) -&gt; <I>next</I>;
+
+
+
+<P>
+
+
+
+</DL>
+
+
+or, even more concisely, any of the following:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+<I>c</I> [0,1,2] =&gt; Paint(0), <A HREF="/cgi-bin/man/man2html?1+Paint">Paint</A>(1), <A HREF="/cgi-bin/man/man2html?2+Paint">Paint</A>(2) -&gt; <I>next</I>;
+
+<BR>
+
+<I>c</I> [0-2] =&gt; Paint(0), <A HREF="/cgi-bin/man/man2html?1+Paint">Paint</A>(1), <A HREF="/cgi-bin/man/man2html?2+Paint">Paint</A>(2) -&gt; <I>next</I>;
+
+<BR>
+
+<I>c</I> =&gt; Paint(0), <A HREF="/cgi-bin/man/man2html?1+Paint">Paint</A>(1), <A HREF="/cgi-bin/man/man2html?2+Paint">Paint</A>(2) -&gt; <I>next</I>;
+
+
+
+<P>
+
+
+
+</DL>
+
+
+Each many-to-many connection must list the same number of output ports (on the left) as input ports (on the right).
+However, if one side of the connection has exactly one element and no port, Click implicitly assigns that
+element's ports sequentially starting from 0.
+<A NAME="lbAI">&nbsp;</A>
+<H3>Element groups</H3>
+
+Element groups cleanly express small detours from a connection path.
+For example, consider:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+<I>c</I> :: Classifier(00/01);
+
+<BR>
+
+<I>x</I> -&gt; <I>c</I> -&gt; <I>y</I>;
+
+<BR>
+
+<I>c</I> [1] -&gt; <A HREF="/cgi-bin/man/man2html?1+Paint">Paint</A>(1) -&gt; <I>y</I>;
+
+
+
+<P>
+
+
+
+</DL>
+
+
+Expressing the detour with an element group preserves the
+configuration's overall linear flow:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+<I>x</I> -&gt; <I>c</I> :: Classifier(00/01) =&gt; (
+
+<BR>
+
+~~~~input [0] -&gt; output;
+
+<BR>
+
+~~~~input [1] -&gt; <A HREF="/cgi-bin/man/man2html?1+Paint">Paint</A>(1) -&gt; output
+
+<BR>
+
+) -&gt; <I>y</I>;
+
+
+
+<P>
+
+
+
+</DL>
+
+
+An element group is one or more Click statements enclosed in parentheses.
+Within the parentheses, the special pseudoelements &quot;input&quot; and
+&quot;output&quot; refer to connections from outside the group.  Click expands
+the group at parse time, so connections through &quot;input&quot; and &quot;output&quot;
+have no run-time overhead.  The following five lines are equivalent:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+<I>x</I> -&gt; <I>y</I>;
+
+<BR>
+
+<I>x</I> -&gt; ( input -&gt; output ) -&gt; <I>y</I>;
+
+<BR>
+
+<I>x</I> -&gt; ( [0] -&gt; [0] ) -&gt; <I>y</I>;
+
+<BR>
+
+<I>x</I> -&gt; (-&gt;) -&gt; <I>y</I>;
+
+<BR>
+
+<I>x</I> -&gt; ( [0]-&gt;[0]; [1]-&gt;[1] ) =&gt; ( [0]-&gt;[0]; [1]-&gt;[1] ) -&gt; <I>y</I>;
+
+
+
+<P>
+
+
+
+</DL>
+
+
+Lines three through five use the fact that Click infers &quot;input&quot; at the
+beginning of a connection, and &quot;output&quot; at the end of a connection,
+when element names are missing.  (This language feature
+can require explicit semicolons to avoid ambiguity.)  Line five also
+uses the fact that connections may be repeated without error (the line
+expands to &quot;<I>x</I> -&gt; <I>y</I>; <I>x</I> -&gt; <I>y</I>&quot;).  It is an error
+to use an &quot;input&quot; pseudoelement's input ports or an &quot;output&quot;
+pseudoelement's output ports.
+<P>
+
+Element groups have implicit, overridable port specifications that
+list all their ports in sequential order.  For example, these three
+lines are equivalent:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+<I>x</I> =&gt; ( [0]-&gt;[0]; [1]-&gt;[1] ) -&gt; <I>y</I>;
+
+<BR>
+
+<I>x</I> =&gt; [0,1] ( [0]-&gt;[0]; [1]-&gt;[1] ) [0,1] -&gt; <I>y</I>;
+
+<BR>
+
+<I>x</I> -&gt; <I>y</I>; <I>x</I> [1] -&gt; <I>y</I>;
+
+
+
+<P>
+
+
+
+</DL>
+
+
+It is an error to define an element group with nonsequential ports, or
+to leave one or more of its ports unconnected:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+<I>x</I> =&gt; [0] ( [0]-&gt;[0]; [1]-&gt;Idle ) -&gt; <I>y</I>; /* Error! */
+
+<BR>
+
+<I>x</I> =&gt; ( [0]-&gt;[0]; [2]-&gt;Idle ) -&gt; <I>y</I>; /* Error! */
+
+
+
+<P>
+
+
+
+</DL>
+
+
+<P>
+
+An element group does not define a new scope.  Its contents may refer
+to elements declared outside of the group, and declarations inside the
+group are visible after the group closes.  This differs from compound
+elements, described next, which have a related syntax but
+introduce a new scope.
+<A NAME="lbAJ">&nbsp;</A>
+<H2>COMPOUND ELEMENTS</H2>
+
+A
+<I>compound element</I>
+
+is a scoped collection of elements that behaves like a single element.
+A compound element can be used anywhere an element class is
+expected (that is, in a declaration or connection). Syntactically, a
+compound element is a set of Click statements enclosed in braces `{ }'.
+Inside the braces, the special names `input' and `output' represent
+connections from or to the outside. Before a router is put on line,
+compound elements are systematically expanded until none remain; thus, they
+have no run-time overhead.
+<P>
+
+Here are some examples. This code, with a compound element,
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+a -&gt; { input -&gt; X -&gt; output } -&gt; b;
+
+
+<P>
+
+
+
+</DL>
+
+
+expands to
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+a -&gt; X -&gt; b;
+
+
+<P>
+
+
+
+</DL>
+
+
+Here is a more complicated example, with multiple ports:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+compound :: {
+<BR>
+
+  input -&gt; X -&gt; output;
+<BR>
+
+  input [1] -&gt; Y -&gt; [1] output;
+<BR>
+
+};
+<BR>
+
+a -&gt; compound -&gt; b;
+<BR>
+
+c -&gt; [1] compound [1] -&gt; d;
+
+
+<P>
+
+
+
+</DL>
+
+
+expands to
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+a -&gt; X -&gt; b;
+<BR>
+
+c -&gt; Y -&gt; d;
+
+
+<P>
+
+
+
+</DL>
+
+
+<P>
+
+The &quot;input&quot; and &quot;output&quot; pseudoelements incur no run-time overhead.
+<P>
+
+The actual expansions will differ from these examples because the elements
+will have different names. A prefix is prepended to the components' names,
+providing locality relative to other names in the configuration. The new
+names have the form
+`<I>compoundname</I>/<I>componentname</I>',
+
+where
+<I>compoundname</I>
+
+is the name of the compound element being expanded, and
+<I>componentname</I>
+
+is the name of the component element inside that compound. For example,
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+compound :: { input -&gt; x :: X -&gt; output };
+<BR>
+
+a -&gt; compound -&gt; b;
+
+
+<P>
+
+
+
+</DL>
+
+
+is really expanded to
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+a -&gt; compound/x :: X -&gt; b;
+
+
+<P>
+
+
+
+</DL>
+
+
+For this purpose, anonymous compound elements are given constructed names
+like
+`@<I>number</I>'.
+
+Nothing prevents a user from declaring an element named like a compound
+element component. We suggest that users generally avoid using the &quot;/&quot;
+character in their element names.
+<P>
+
+It is an error to use an &quot;input&quot; pseudoelement's input ports or an
+&quot;output&quot; pseudoelement's output ports. It is also an error to leave an
+intermediate port unused -- for example, to use &quot;input [0]&quot; and &quot;input [2]&quot;
+but not &quot;input [1]&quot;.
+<A NAME="lbAK">&nbsp;</A>
+<H3>The `elementclass' statement</H3>
+
+The `elementclass' statement lets the user name a frequently-occurring
+compound element, and use the name as if it were a primitive element class.
+Syntactically, it looks like this:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+elementclass
+<I>identifier</I>
+
+<I>compoundelement</I>
+
+;
+
+
+<P>
+
+
+
+</DL>
+
+
+After this statement, every occurrence of the
+<I>identifier</I>
+
+will be replaced with the
+<I>compoundelement</I>.
+
+For example, this code, with an `elementclass':
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+elementclass MyQueue {
+<BR>
+
+  input -&gt; Queue -&gt; Shaper(1000) -&gt; output;
+<BR>
+
+}
+<BR>
+
+q :: MyQueue;
+<BR>
+
+a -&gt; q -&gt; b;
+
+
+<P>
+
+
+
+</DL>
+
+
+is equivalent to this code, without it:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+q :: { input -&gt; Queue -&gt; Shaper(1000) -&gt; output };
+<BR>
+
+a -&gt; q -&gt; b;
+
+
+<P>
+
+
+
+</DL>
+
+
+which roughly expands to:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+a -&gt; Queue -&gt; Shaper(1000) -&gt; b;
+
+
+<P>
+
+
+
+</DL>
+
+
+<P>
+
+The user can declare element classes that have the names of previously
+existing element classes:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+elementclass Queue {
+<BR>
+
+  input -&gt; Queue -&gt; Shaper(1000) -&gt; output;
+<BR>
+
+}
+
+
+<P>
+
+
+
+</DL>
+
+
+Element classes are nonrecursive and lexically scoped, so the `Queue'
+inside this definition refers to the original `Queue'. The scope of an
+element class definition extends from immediately after its closing right
+brace to the end of the enclosing scope.
+<P>
+
+A variant of the elementclass statement makes synonyms for preexisting
+element classes. For example, this statement
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+elementclass MyQueue Queue;
+
+
+<P>
+
+
+
+</DL>
+
+
+makes MyQueue a synonym for Queue.
+<A NAME="lbAL">&nbsp;</A>
+<H3>Configuration parameters</H3>
+
+Compound elements may take configuration parameters, which are expanded
+into the configuration strings of its components. The parameters are named
+at the beginning of the compound element. Each parameter looks like a Perl
+variable -- a dollar sign followed by one or more letters, numbers, and
+underscores. For example, this compound element
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+{ $a, $b | ... }
+
+
+<P>
+
+
+
+</DL>
+
+
+takes two configuration parameters, named `$a' and `$b'. Keyword arguments
+are also supported. For example, this compound element
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+{ COUNT $count | ... }
+
+
+<P>
+
+
+
+</DL>
+
+
+takes a COUNT keyword parameter. Mismatched configuration parameters cause
+errors; for example:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+{ $a, $b | ... } (1)         // Error: too few arguments
+<BR>
+
+{ $a, $b | ... } (1, 2, 3)   // Error: too many arguments
+<BR>
+
+{ COUNT $count | ... } (1)   // Error: missing 'COUNT' parameter
+
+
+<P>
+
+
+
+</DL>
+
+
+The special keyword `__REST__' matches any additional arguments supplied to
+the compound element. For example:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+{ $a, COUNT $count, __REST__ $rest | ... }
+<BR>
+
+           (1, 2, COUNT 3, FOO 4)
+
+
+<P>
+
+
+
+</DL>
+
+
+This compound element will be expanded with `$a' set to `1', `$count' set
+to `3', and `$rest' set to `2, FOO 4'.
+<P>
+
+In a compound element definition, all positional parameters must precede
+any keyword parameters, and `__REST__', if present, must appear last of
+all.
+<P>
+
+As the compound is expanded, its components' configuration strings are
+searched for references to the parameters. Any such references are replaced
+with the supplied arguments. For example, this code:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+... -&gt; { $a | input -&gt;
+<BR>
+
+           A(1, $a, 3) -&gt; output } (100) -&gt; ...
+
+
+<P>
+
+
+
+</DL>
+
+
+expands to this:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+... -&gt; A(1, 100, 3) -&gt; ...
+
+
+<P>
+
+
+
+</DL>
+
+
+You can avoid substitution by putting the dollar sign inside single quotes.
+<P>
+
+Use braces, like `${a}', to avoid including following letters in a variable
+name. Click also supports the shell-like `${VAR-DEFAULT}' syntax, which
+substitutes the value of `$VAR', or `DEFAULT' if that variable was not set.
+See also PARAMETER DEFINITIONS, below.
+<A NAME="lbAM">&nbsp;</A>
+<H3>Overloading</H3>
+
+A single compound element may contain multiple overloaded definitions
+separated from one another by two vertical bars &quot;<TT>||</TT>&quot;. Different
+definitions may have different numbers of input ports, different numbers of
+output ports, or different sets of configuration arguments. For example,
+this extended MyQueue compound element takes an optional capacity argument,
+just like Queue itself:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+elementclass MyQueue {
+<BR>
+
+  input -&gt; Queue -&gt; Shaper(1000) -&gt; output;
+<BR>
+
+||
+<BR>
+
+  $cap | input -&gt; Queue($cap)
+<BR>
+
+               -&gt; Shaper(1000) -&gt; output;
+<BR>
+
+}
+
+
+<P>
+
+
+
+</DL>
+
+
+For each use of an overloaded compound element, Click will choose the first
+definition that matches the provided number of input ports, number of
+output ports, and configuration arguments. It is an error if no definition
+matches these properties exactly.
+<P>
+
+It is also possible to extend an existing element class with new overloaded
+definitions with &quot;<TT>...</TT>&quot;. For example, this definition introduces a
+two-argument version of Queue:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+elementclass Queue {
+<BR>
+
+  $cap, $rate | input -&gt; Queue($cap)
+<BR>
+
+                -&gt; Shaper($rate) -&gt; output;
+<BR>
+
+|| ...
+<BR>
+
+}
+
+
+<P>
+
+
+
+</DL>
+
+
+(The ellipsis in this example must be typed verbatim.) The overloadings
+visible at a given declaration are those that lexically precede that
+declaration. For example, the following example is an error since the
+two-argument version of Test is not visible at the declaration where it is
+required:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+elementclass Test { $a | /* nothing */ }
+<BR>
+
+test :: Test(1, 2);
+<BR>
+
+elementclass Test { $a, $b | /* nothing */ || ... }
+
+
+<P>
+
+
+
+</DL>
+
+
+<A NAME="lbAN">&nbsp;</A>
+<H2>CONFIGURATION STRINGS</H2>
+
+Click configuration strings are comma-separated lists of arguments, where
+each argument is a space-separated list of objects. This section describes
+some common object types. See the element documentation for argument types
+expected by a particular element.
+<P>
+
+Configuration strings may contain comments (`// ... EOL' and `/* ... */'),
+which are replaced with single space characters. Inside single- or
+double-quoted strings, commas, spaces, and comment-starting sequences lose
+their regular meaning and are treated as normal characters.
+<P>
+
+The most common object types are:
+<DL COMPACT>
+<DT>&bull;<DD>
+<B>Strings.</B>
+
+Any sequence of characters.  Single- or double-quoted strings are allowed
+(and required, if the string contains a space or comma).  Inside
+double-quoted strings, backslash substitutions are performed; see below.
+You can concatenate strings by juxtaposing them.  For example, `a&quot;b&quot;c' is
+equivalent to `abc'.
+<DT>&bull;<DD>
+<B>Booleans.</B>
+
+`0', `false', and `no' mean false; `1', `true', and `yes' mean true.
+<DT>&bull;<DD>
+<B>Integers</B>
+
+preceded by an optional `+' or `-' sign. Decimal, octal (first digit `0'),
+and hexadecimal (starting with `0x') are allowed.
+<DT>&bull;<DD>
+<B>Real numbers</B>
+
+in decimal notation.
+<DT>&bull;<DD>
+<B>Times and delays</B>
+
+in decimal real notation, followed by an optional unit: `s'/`sec', `ms',
+`us', `ns', `m'/`min', `h'/`hr'.
+<DT>&bull;<DD>
+<B>Bandwidths</B>
+
+in decimal real notation, followed by an optional unit: `bps' or `Bps' for
+bits or bytes per second, with an optional SI prefix `k', `M', or `G'.  The
+default unit is generally `Bps'.
+<DT>&bull;<DD>
+<B>IP addresses</B>
+
+in the conventional `n.n.n.n' form (for example, `18.26.4.15').
+<DT>&bull;<DD>
+<B>IP network prefixes</B>
+
+in the CIDR form `n.n.n.n/k' (for example, `18.26.4/24').
+<DT>&bull;<DD>
+<B>IPv6 addresses</B>
+
+in any of the conventional forms (for example, `::',
+`1080::8:800:200C:417A', or `::18.26.4.15').
+<DT>&bull;<DD>
+<B>Ethernet addresses</B>
+
+in the standard `x-x-x-x-x-x' form (for example,
+`0-a0-c9-9c-fd-9c'), or the more conventional `x:x:x:x:x:x' form.
+<DT>&bull;<DD>
+<B>Element names.</B>
+
+
+</DL>
+<P>
+
+Some elements, like
+<I>Classifier</I>,
+
+take arguments that don't fit any of these types. See the element
+documentation for details.
+<P>
+
+If the last argument in a configuration string is empty (containing only
+whitespace and comments), then it is ignored.  Thus, `Element(1, )',
+`Element(1, /* comment */)', and `<A HREF="/cgi-bin/man/man2html?1+Element">Element</A>(1)' behave exactly alike.
+<P>
+
+Configuration strings may also contain parameter references, such as
+`$interface'. The parameter values are substituted in. Parameters may be
+defined either by compound element arguments, by explicit `define'
+statements, or on the command line.
+<A NAME="lbAO">&nbsp;</A>
+<H3>Backslash Substitutions</H3>
+
+<P>
+
+The following backslash substitutions are performed inside double quotes.
+Additionally, as a special case, a bare data substitution sequence `\&lt;
+... &gt;' acts as if it were enclosed in double quotes.  (Inside single
+quotes, `\&lt; ... &gt;' is not special.)
+<DL COMPACT>
+<DT>1.<DD>
+C-like substitutions. Specifically, `\a', `\b', `\t', `\n', `\v',
+`\f', `\r', `\\', and `\[1, 2, or 3 octal digits]' have their C
+meanings.  `\x[any number of hex digits]' is replaced with the byte
+defined by the last 2 hex digits.
+<DT>2.<DD>
+Data substitutions. An escape sequence `\&lt; ... hex digits and spaces ...
+&gt;' is replaced with the data represented by the hex digits. For example,
+the sequence `\&lt; 48 45 4c 4C 4f &gt;' is replaced with `HELLO'.
+<DT>3.<DD>
+Backlash-newline sequences (`\[LF]', `\[CR]', or `\[CR][LF]') are removed.
+<DT>4.<DD>
+Any other `\[CHAR]' sequence is replaced with `[CHAR]'.
+</DL>
+<A NAME="lbAP">&nbsp;</A>
+<H2>REQUIREMENTS</H2>
+
+The `require' statement is used to link a configuration with optional
+packages and libraries. Its argument is a comma-separated list of
+requirements.
+<P>
+
+Packages, which are dynamic objects including new compiled element
+definitions, are included with `require(package)' declarations:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+require(package fastclassifier, package specialcode);
+
+
+<P>
+
+
+
+</DL>
+
+
+Installation programs can use the package names to find and upload any
+necessary package code. The required package names are also checked against
+a list of currently active packages when a configuration is installed. If
+any required packages are unavailable, an error is reported.
+<P>
+
+Libraries, which are Click configuration files that (for instance) might
+declare new compound element definitions, are included with
+`require(library)' declarations:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+require(library mycompounds.click);
+
+
+<P>
+
+
+
+</DL>
+
+
+Installation programs search CLICKPATH for the named library
+file. `require(library)' can only be used at file scope, and a given
+library file is included at most once, no matter how many times it is
+mentioned in `require' statements.
+<A NAME="lbAQ">&nbsp;</A>
+<H2>PARAMETER DEFINITIONS</H2>
+
+Parameters are defined using the `define' statement. Its argument is a
+comma-separated list of pairs, each pair consisting of a configuration
+variable and a value:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+define($DEVNAME eth0, $COUNT 1);
+
+
+<P>
+
+
+
+</DL>
+
+
+This sets the `$DEVNAME' parameter to `eth0' and the `$COUNT' parameter to
+`1'. Definitions are lexically scoped, so definitions inside a compound
+element are not visible outside it. However, all definitions in a given
+scope take place simultaneously, regardless of their ordering. The
+following two configurations have the same effect:
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+1) define($a 2); Message($a)
+<BR>
+
+2) Message($a); define($a 2)
+
+
+<P>
+
+
+
+</DL>
+
+
+It is an error to define a parameter more than once in any single
+scope. Click programs such as
+
+and
+
+allow parameters to specified on the command line; these override any
+global parameters with the same names.
+<A NAME="lbAR">&nbsp;</A>
+<H2>LEXICAL ISSUES</H2>
+
+Click identifiers are nonempty sequences of letters, numbers, underscores
+`_', at-signs `@', and slashes `/' that do not begin or end with a slash.
+The system uses `@' and `/' for special purposes: `@' in constructed names
+for anonymous elements and prefixes, and `/' in names for components of
+compound elements. Users are discouraged from using these characters in
+their own identifiers. Identifiers are case-sensitive. No component of an
+identifier may consist solely of numbers; for example, `1/x' is an illegal
+identifier.
+<P>
+
+The keywords `elementclass', `require', `provide', and `define'
+may not be used as identifiers. The normal identifiers `input' and `output'
+have special meaning inside compound element definitions.
+<P>
+
+The following characters and multi-character sequences are single Click
+tokens:
+<DL COMPACT><DT><DD>
+-&gt;~~=&gt;~~::~~;~~,~~(~~)~~[~~]~~{~~}~~|~~||~~...
+</DL>
+
+<P>
+
+Whitespace (using the C definition) and comments separate Click tokens.
+Click uses C++-style comments: from `//' to the end of the line, or from
+`/*' to the next `*/'. Either form of comment terminates an identifier, so
+this Click fragment
+<DL COMPACT><DT><DD>
+an/identifier/with/slashes//too/many
+</DL>
+
+has an identifier `an/identifier/with/slashes' and a comment
+`//too/many'. No identifier contains two consecutive slashes.
+<P>
+
+Parameters, which are used in compound elements, look like Perl variables. A
+parameter consists of a dollar sign `$' followed by one or more letters,
+numbers, and underscores.
+<P>
+
+A configuration string starts immediately following a left parenthesis `(',
+and continues up to the next unbalanced right parenthesis `)'. However,
+parentheses inside single or double quotes or comments do not affect
+balancing. Here are several examples; in each case, the configuration
+string consists of the text between the `#' marks (including the `#' marks
+themselves).
+
+<DL COMPACT><DT><DD>
+
+<P>
+
+
+
+
+C1(#simple string#)
+<BR>
+
+C2(#string with (balanced parens)#)
+<BR>
+
+C3(#string with &quot;)quoted&quot; paren#)
+<BR>
+
+C4(#// end-of-line comment)
+<BR>
+
+   still going!#)
+<BR>
+
+C5(#/* slash-star comment) */ and backslash \#)
+
+
+<P>
+
+
+
+</DL>
+
+
+<P>
+
+A Click program may contain C preprocessor-style line directives. These
+lines start with `#' and have the form `# <I>linenumber</I>
+&quot;<I>filename</I>&quot;' or `#line <I>linenumber</I> &quot;<I>filename</I>&quot;'; they change
+the filenames and line numbers used for error messages. The filename
+portion is optional. Line directives are not recognized inside
+configuration strings.
+<A NAME="lbAS">&nbsp;</A>
+<H2>ARCHIVES</H2>
+
+Many Click programs also accept
+
+archives as configurations. The archive must contain a member called
+`config', which is treated as a Click-language configuration. The archive
+may also contain package code required by the configuration. The
+
+and
+
+programs will decompose the archive and install any package code before
+installing the configuration itself. The
+
+kernel module will not accept archives; use
+
+<A NAME="lbAT">&nbsp;</A>
+<H2>BNF GRAMMAR</H2>
+
+<I>stmts</I> ::= <I>stmts</I> <I>stmt</I> | <I>empty</I>
+
+<BR>
+
+<I>stmt</I> ::= <I>connection</I>
+
+<BR>
+
+    | <I>elementclassstmt</I> | <I>requirestmt</I>
+
+<BR>
+
+    | <I>definestmt</I> | &quot;;&quot;
+
+<BR>
+
+<I>connection</I> ::= <I>elements</I> <I>opt-conntail</I> | <I>conntail</I>
+
+<BR>
+
+<I>opt-conntail</I> ::= <I>conntail</I> | <I>empty</I>
+
+<BR>
+
+<I>conntail</I> ::= <I>arrow</I> <I>elements</I> <I>opt-conntail</I> | <I>arrow</I>
+
+<BR>
+
+<I>arrow</I> ::= &quot;-&gt;&quot; | &quot;=&gt;&quot;
+
+<BR>
+
+<I>elements</I> ::= <I>element</I> | <I>elements</I> &quot;,&quot; <I>element</I>
+
+<BR>
+
+<I>element</I> ::= <I>opt-port</I> <I>element-reference</I> <I>opt-port</I>
+
+<BR>
+
+<I>element-reference</I> ::= <I>element-name</I>
+
+<BR>
+
+    | <I>element-name</I> &quot;::&quot; <I>class</I> <I>opt-config</I>
+
+<BR>
+
+    | <I>class</I> <I>opt-config</I>
+
+<BR>
+
+    | <I>group</I>
+
+<BR>
+
+<I>element-name</I> ::= identifier
+
+<BR>
+
+<I>opt-port</I> ::= &quot;[&quot; <I>ports</I> &quot;]&quot; | <I>empty</I>
+
+<BR>
+
+<I>ports</I> ::= portnumber | <I>ports</I> &quot;,&quot; portnumber
+
+<BR>
+
+<I>opt-config</I> ::= &quot;(&quot; configstring &quot;)&quot; | <I>empty</I>
+
+<BR>
+
+<I>class</I> ::= identifier | &quot;{&quot; <I>compounds</I> &quot;}&quot;
+
+<BR>
+
+    | &quot;{&quot; <I>compounds</I> &quot;||&quot; &quot;...&quot; &quot;}&quot;
+
+<BR>
+
+<I>compounds</I> ::= <I>compound</I> | <I>compounds</I> &quot;||&quot; <I>compound</I>
+
+<BR>
+
+<I>compound</I> ::= <I>stmts</I> | <I>opt-formals</I> &quot;|&quot; <I>stmts</I>
+
+<BR>
+
+<I>opt-formals</I> ::= <I>formals</I> | <I>empty</I>
+
+<BR>
+
+<I>formals</I> ::= <I>formal</I> | <I>formals</I> &quot;,&quot; <I>formal</I>
+
+<BR>
+
+<I>formal</I> ::= parameter | identifier parameter
+
+<BR>
+
+<I>group</I> ::= &quot;(&quot; <I>stmts</I> &quot;)&quot;
+
+<BR>
+
+<I>elementclassstmt</I> ::= &quot;elementclass&quot; identifier <I>class</I>
+
+<BR>
+
+<I>requirestmt</I> ::= &quot;require&quot; &quot;(&quot; configstring &quot;)&quot;
+
+<BR>
+
+<I>definestmt</I> ::= &quot;define&quot; &quot;(&quot; configstring &quot;)&quot;
+
+<BR>
+
+<I>empty</I> ::= 
+
+<A NAME="lbAU">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+
+
+
+<A NAME="lbAV">&nbsp;</A>
+<H2>AUTHOR</H2>
+
+
+Eddie Kohler, <A HREF="mailto:kohler@seas.harvard.edu">kohler@seas.harvard.edu</A>
+<BR>
+
+<A HREF="http://www.pdos.lcs.mit.edu/click/">http://www.pdos.lcs.mit.edu/click/</A>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAD">SHORTHAND</A><DD>
+<DL>
+<DT><A HREF="#lbAE">Declaration shorthand</A><DD>
+<DT><A HREF="#lbAF">Connection shorthand</A><DD>
+<DT><A HREF="#lbAG">Many-to-one connections</A><DD>
+<DT><A HREF="#lbAH">Many-to-many connections</A><DD>
+<DT><A HREF="#lbAI">Element groups</A><DD>
+</DL>
+<DT><A HREF="#lbAJ">COMPOUND ELEMENTS</A><DD>
+<DL>
+<DT><A HREF="#lbAK">The `elementclass' statement</A><DD>
+<DT><A HREF="#lbAL">Configuration parameters</A><DD>
+<DT><A HREF="#lbAM">Overloading</A><DD>
+</DL>
+<DT><A HREF="#lbAN">CONFIGURATION STRINGS</A><DD>
+<DL>
+<DT><A HREF="#lbAO">Backslash Substitutions</A><DD>
+</DL>
+<DT><A HREF="#lbAP">REQUIREMENTS</A><DD>
+<DT><A HREF="#lbAQ">PARAMETER DEFINITIONS</A><DD>
+<DT><A HREF="#lbAR">LEXICAL ISSUES</A><DD>
+<DT><A HREF="#lbAS">ARCHIVES</A><DD>
+<DT><A HREF="#lbAT">BNF GRAMMAR</A><DD>
+<DT><A HREF="#lbAU">SEE ALSO</A><DD>
+<DT><A HREF="#lbAV">AUTHOR</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 13:44:58 GMT, January 29, 2018
+</BODY>
+</HTML>

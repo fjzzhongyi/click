@@ -1,0 +1,139 @@
+This is TeX, Version 3.14159265 (TeX Live 2017) (preloaded format=tex 2018.1.25)  29 JAN 2018 19:57
+**texinfo.tex
+(./texinfo.tex Loading texinfo [version 1999-09-25.10]: Basics,
+\bindingoffset=\dimen16
+\normaloffset=\dimen17
+\pagewidth=\dimen18
+\pageheight=\dimen19
+\outerhsize=\dimen20
+\outervsize=\dimen21
+\cornerlong=\dimen22
+\cornerthick=\dimen23
+\topandbottommargin=\dimen24
+\headlinebox=\box16
+\footlinebox=\box17
+\margin=\insert252
+\EMsimple=\toks12
+\singlespaceskip=\skip18
+\groupinvalidhelp=\toks13
+\mil=\dimen25
+\exdentamount=\skip19
+\inmarginspacing=\skip20
+ pdf,
+\tempnum=\count26
+\lnkcount=\count27
+\filename=\toks14
+\filenamelength=\count28
+\pgn=\count29
+\toksA=\toks15
+\toksB=\toks16
+\toksC=\toks17
+\toksD=\toks18
+\boxA=\box18
+\countA=\count30
+ fonts,
+\sffam=\fam8
+\mainmagstep=\count31
+\fontdepth=\count32
+
+page headings,
+\titlepagetopglue=\skip21
+\titlepagebottomglue=\skip22
+\evenheadline=\toks19
+\oddheadline=\toks20
+\evenfootline=\toks21
+\oddfootline=\toks22
+ tables,
+\tableindent=\dimen26
+\itemindent=\dimen27
+\itemmargin=\dimen28
+\itemmax=\dimen29
+\itemno=\count33
+\multitableparskip=\skip23
+\multitableparindent=\skip24
+\multitablecolspace=\dimen30
+\multitablelinespace=\skip25
+\colcount=\count34
+ conditionals, indexing,
+\secondaryindent=\skip26
+\partialpage=\box19
+\doublecolumnhsize=\dimen31
+ sectioning,
+\chapno=\count35
+\secno=\count36
+\subsecno=\count37
+\subsubsecno=\count38
+\appendixno=\count39
+\absseclevel=\count40
+\secbase=\count41
+\chapheadingskip=\skip27
+\secheadingskip=\skip28
+\subsecheadingskip=\skip29
+ toc,
+\tocfile=\write0
+\contentsrightmargin=\skip30
+\savepageno=\count42
+\lastnegativepageno=\count43
+\shortappendixwidth=\dimen32
+\tocindent=\dimen33
+ environments,
+\dblarrowbox=\box20
+\longdblarrowbox=\box21
+\pushcharbox=\box22
+\bullbox=\box23
+\equivbox=\box24
+\errorbox=\box25
+\lispnarrowing=\skip31
+\envskipamount=\skip32
+\circthick=\dimen34
+\cartouter=\dimen35
+\cartinner=\dimen36
+\normbskip=\skip33
+\normpskip=\skip34
+\normlskip=\skip35
+\lskip=\skip36
+\rskip=\skip37
+
+defuns,
+\defbodyindent=\skip38
+\defargsindent=\skip39
+\deftypemargin=\skip40
+\deflastargmargin=\skip41
+\parencount=\count44
+ macros,
+\macscribble=\write1
+\paramno=\count45
+\macname=\toks23
+ cross references,
+\auxfile=\write2
+\savesfregister=\count46
+\footnoteno=\count47
+
+(/usr/local/texlive/2017/texmf-dist/tex/generic/epsf/epsf.tex
+This is `epsf.tex' v2.7.4 <14 February 2011>
+\epsffilein=\read0
+\epsfframemargin=\dimen37
+\epsfframethickness=\dimen38
+\epsfrsize=\dimen39
+\epsftmp=\dimen40
+\epsftsize=\dimen41
+\epsfxsize=\dimen42
+\epsfysize=\dimen43
+\pspoints=\dimen44
+)
+\noepsfhelp=\toks24
+ localization,
+\nolanghelp=\toks25
+\defaultparindent=\dimen45
+ and turning on texinfo input format.)
+*
+(Please type a command or say `\end')
+*
+(Please type a command or say `\end')
+*
+! Emergency stop.
+<*> 
+    
+End of file on the terminal!
+
+No pages of output.
